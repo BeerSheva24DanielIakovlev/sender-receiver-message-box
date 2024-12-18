@@ -1,30 +1,40 @@
 package telran.producer.consumer;
 
-import java.util.concurrent.CountDownLatch;
-
 public class Receiver extends Thread {
     private MessageBox messageBox;
-    private volatile boolean running = true;
 
-    public Receiver(MessageBox messageBox, CountDownLatch latch) {
+    public Receiver(MessageBox messageBox) {
+        this.messageBox = messageBox;
+
+    }
+
+    public void setMessageBox(MessageBox messageBox) {
         this.messageBox = messageBox;
     }
 
     @Override
     public void run() {
+        String message = null;
         try {
-            while (running) {
-                String message = messageBox.poll();
-                if (message != null) {
-                    System.out.printf("Thread: %s, message: %s\n", getName(), message);
-                }
+            while (true) {
+
+              message   = messageBox.take();
+                process(message);
+
             }
-        } catch (Exception e) {
-            System.out.printf("Thread: %s interrupted.\n", getName());
-        }
+        } catch (InterruptedException e) {
+           do {
+            message = messageBox.poll();
+            if(message != null) {
+                process(message);
+            }
+           }
+         while(message != null);
+    }
+}
+
+    private void process(String message) {
+        System.out.printf("Thread: %s, message: %s\n", getName(), message);
     }
 
-    public void stopReceiver() {
-        running = false;
-    }
 }
